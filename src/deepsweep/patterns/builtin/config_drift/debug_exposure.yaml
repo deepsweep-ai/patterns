@@ -1,0 +1,75 @@
+id: "DS-CD-001"
+name: "Debug Mode Exposure"
+version: "1.0.0"
+category: "config_drift"
+severity: "MEDIUM"
+cvss: 5.3
+cve: []
+owasp_mapping: ["ASI08"]
+
+description: |
+  Detects AI assistant debug modes, verbose logging, and development
+  configurations that expose internal state or sensitive information
+  in production environments.
+
+detection:
+  type: "regex"
+  patterns:
+    - pattern: "(?i)DEBUG\\s*[=:]\\s*(True|1|yes|on)"
+      name: "debug_enabled"
+      weight: 0.8
+    - pattern: "(?i)VERBOSE\\s*[=:]\\s*(True|1|yes|on)"
+      name: "verbose_enabled"
+      weight: 0.6
+    - pattern: "(?i)LOG_LEVEL\\s*[=:]\\s*[\"']?DEBUG[\"']?"
+      name: "debug_logging"
+      weight: 0.7
+    - pattern: "(?i)\"development\"\\s*:\\s*true"
+      name: "dev_mode"
+      weight: 0.5
+    - pattern: "(?i)FLASK_DEBUG|DJANGO_DEBUG|NODE_ENV\\s*=\\s*development"
+      name: "framework_debug"
+      weight: 0.9
+  file_types:
+    - ".env"
+    - ".env.production"
+    - "config.py"
+    - "settings.py"
+    - "config.json"
+    - "docker-compose.yml"
+    - "Dockerfile"
+  exclude_patterns:
+    - ".env.example"
+    - ".env.template"
+    - "# development only"
+
+remediation:
+  summary: "Disable debug modes in production configurations"
+  steps:
+    - "Set DEBUG=False in production environment"
+    - "Configure LOG_LEVEL to INFO or WARNING"
+    - "Remove development-only settings from production configs"
+    - "Use separate .env files for each environment"
+    - "Run 'deepsweep validate .' to verify configuration"
+  references:
+    - "https://owasp.org/www-project-web-security-testing-guide/"
+    - "https://docs.deepsweep.ai/patterns/DS-CD-001"
+  auto_fix: false
+
+examples:
+  malicious:
+    - "DEBUG = True"
+    - 'LOG_LEVEL = "DEBUG"'
+    - "FLASK_DEBUG=1"
+  benign:
+    - "DEBUG = False"
+    - 'LOG_LEVEL = "INFO"'
+    - "NODE_ENV=production"
+
+metadata:
+  author: "DeepSweep Security Team"
+  created: "2025-12-21"
+  updated: "2026-01-16"
+  confidence: 0.88
+  false_positive_rate: 0.08
+  tags: ["config-drift", "debug", "production"]

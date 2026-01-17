@@ -1,0 +1,1 @@
+"""Secrets detection patterns."""

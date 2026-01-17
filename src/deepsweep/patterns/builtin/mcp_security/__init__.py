@@ -1,0 +1,1 @@
+"""MCP security detection patterns."""

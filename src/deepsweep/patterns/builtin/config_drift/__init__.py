@@ -1,0 +1,1 @@
+"""Configuration drift detection patterns."""

@@ -1,0 +1,71 @@
+id: "DS-SC-001"
+name: "Slopsquatting Detection"
+version: "1.0.0"
+category: "supply_chain"
+severity: "HIGH"
+cvss: 8.1
+cve: []
+owasp_mapping: ["ASI05", "ASI09"]
+
+description: |
+  Detects AI-hallucinated package names that don't exist in official
+  registries. LLMs frequently generate plausible-sounding package names
+  that attackers then register with malicious code (slopsquatting).
+
+detection:
+  type: "composite"
+  patterns:
+    - pattern: "(?i)from\\s+([a-z][a-z0-9_-]+)\\s+import"
+      name: "python_import"
+      weight: 0.5
+    - pattern: "(?i)import\\s+([a-z][a-z0-9_-]+)"
+      name: "python_import_alt"
+      weight: 0.5
+    - pattern: "(?i)\"([a-z][a-z0-9_-]+)\"\\s*:\\s*\"[^\"]+\""
+      name: "npm_dependency"
+      weight: 0.5
+    - pattern: "(?i)require\\(['\"]([a-z][a-z0-9_-]+)['\"]\\)"
+      name: "node_require"
+      weight: 0.5
+  file_types:
+    - "requirements.txt"
+    - "pyproject.toml"
+    - "setup.py"
+    - "package.json"
+    - "package-lock.json"
+    - "yarn.lock"
+    - "Pipfile"
+    - "Pipfile.lock"
+  exclude_patterns:
+    - "# test dependencies"
+    - "devDependencies"
+
+remediation:
+  summary: "Verify all packages exist in official registries before install"
+  steps:
+    - "Check PyPI/npm for each dependency"
+    - "Verify package author and download counts"
+    - "Look for typosquatting variations"
+    - "Pin exact versions in production"
+    - "Run 'deepsweep validate .' to flag suspicious packages"
+  references:
+    - "https://socket.dev/npm/issue/slopsquatting"
+    - "https://owasp.org/www-project-agentic-ai-security/"
+    - "https://docs.deepsweep.ai/patterns/DS-SC-001"
+  auto_fix: false
+
+examples:
+  malicious:
+    - "from python-utils import helper  # Non-existent package"
+    - '"react-dom-utils": "1.0.0"  // Hallucinated package'
+  benign:
+    - "from requests import Session  # Real package"
+    - '"react-dom": "18.2.0"  // Official package'
+
+metadata:
+  author: "DeepSweep Security Team"
+  created: "2025-12-21"
+  updated: "2026-01-16"
+  confidence: 0.85
+  false_positive_rate: 0.10
+  tags: ["supply-chain", "slopsquatting", "hallucination"]
